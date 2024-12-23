@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Param } from '@nestjs/common';
+import { Controller, Post, Body, Param, HttpException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
+import { WebhookDto } from './webhook.dto';
 
 @Controller('payments')
 export class PaymentController {
@@ -11,12 +12,22 @@ export class PaymentController {
     return { transactionId };
   }
 
-  @Post('handle-payment/:orderId')
-  async handlePayment(
-    @Param('orderId') orderId: string,
-    @Body('transactionResult') transactionResult: string
-  ) {
-    await this.paymentService.handlePayment(orderId, transactionResult);
-    return { message: 'Payment processed successfully' };
+  @Post('webhook')
+  async handleWebhook(@Body() webhookData: WebhookDto) {
+    try {
+      console.log('Received Webhook:', webhookData);
+
+    
+     // await this.paymentService.handlePayment(webhookData.data.transaction);
+
+      return { message: 'Webhook processed successfully' };
+    } catch (error) {
+      console.error('Error handling webhook:', error.message);
+      throw new HttpException(
+        { message: 'Failed to process webhook', error: error.message },
+        500
+      );
+    }
   }
+
 }

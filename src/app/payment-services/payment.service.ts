@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import axios from 'axios';
 
 import { OrderService } from '../order/order.service';
@@ -71,28 +71,46 @@ export class PaymentService {
 }
 
 
-
-  async handlePayment(orderId: string, transactionResult: string): Promise<void> {
-
-    const order = await this.orderService.findOne(orderId);
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
-    }
-
-    if (transactionResult === 'success') {
-      await this.orderService.update(orderId, { status: OrderStatus.PAID });
-
-      for (const item of order.items) {
-        const product = await this.productService.findOne(item.product.id);
-        if (!product) {
-          throw new NotFoundException(`Product with ID ${item.product.id} not found`);
-        }
-
-        product.stock -= item.quantity;
-        await this.productService.update(product.id, { stock: product.stock });
-      }
-    } else {
-      await this.orderService.update(orderId, { status: OrderStatus.FAILED });
-    }
+async handlePayment(data: { orderId: string; transactionResult: string }): Promise<void> {
+  // Validar datos de entrada
+  if (!data || !data.orderId || !data.transactionResult) {
+    throw new BadRequestException('Invalid payment data provided');
   }
+
+  // Buscar orden
+  const order = await this.orderService.findOne(data.orderId);
+  if (!order) {
+    throw new NotFoundException(`Order with ID ${data.orderId} not found`);
+  }
+
+  // Actualizar estado de la orden basado en el resultado de la transacción
+  if (data.transactionResult !== 'success') {
+    await this.orderService.update(data.orderId, { status: OrderStatus.FAILED });
+    return;
+  }
+
+  // Actualizar estado de la orden a "Pagada"
+  await this.orderService.update(data.orderId, { status: OrderStatus.PAID });
+
+  // Actualizar stock de los productos
+  const productStockUpdates = order.items.map(async (item) => {
+    const product = await this.productService.findOne(item.product.id);
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${item.product.id} not found`);
+    }
+
+    if (product.stock < item.quantity) {
+      throw new BadRequestException(
+        `Insufficient stock for Product ID ${item.product.id}. Available: ${product.stock}, Requested: ${item.quantity}`,
+      );
+    }
+
+    return this.productService.update(product.id, {
+      stock: product.stock - item.quantity,
+    });
+  });
+
+  // Ejecutar las actualizaciones concurrentemente
+  await Promise.all(productStockUpdates);
+}
 }
