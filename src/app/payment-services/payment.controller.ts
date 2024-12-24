@@ -8,8 +8,8 @@ export class PaymentController {
 
   @Post('create-transaction/:orderId')
   async createTransaction(@Param('orderId') orderId: string) {
-    const transactionId = await this.paymentService.createTransaction(orderId);
-    return { transactionId };
+    //const transactionId = await this.paymentService.createTransaction(orderId);
+   // return { transactionId };
   }
 
   @Post('webhook')

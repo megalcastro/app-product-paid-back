@@ -6,6 +6,7 @@ import { OrderItem } from '../../entities/order-item.entity';
 import { Product } from '../../entities/product.entity';
 import { Customer } from '../../entities/customer.entity';
 import { OrderStatus } from './order-status.enum';
+import { PaymentService } from '../payment-services/payment.service';
 
 @Injectable()
 export class OrderService {
@@ -21,6 +22,9 @@ export class OrderService {
 
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+
+    private readonly paymentService: PaymentService
+
   ) {}
 
   async create(orderData: any): Promise<Order> {
@@ -59,6 +63,10 @@ export class OrderService {
     order.totalAmount = totalAmount;
 
     const savedOrder = await this.orderRepository.save(order);
+
+    const paymentResult = await this.paymentService.createTransaction(savedOrder.id, savedOrder.totalAmount, customer.email);
+
+    console.log('paymentResult', paymentResult);
 
     return savedOrder;
   }
@@ -138,3 +146,5 @@ export class OrderService {
     return order;
   }
 }
+export { Order };
+

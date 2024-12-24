@@ -11,20 +11,15 @@ import { encrypt } from '../../utils/utils';
 @Injectable()
 export class PaymentService {
   constructor(
-    private readonly orderService: OrderService,
-    private readonly productService: ProductService,
+ 
   ) {}
 
-  async createTransaction(orderId: string): Promise<string> {
+  async createTransaction(orderId: string, totalAmount: number, customerEmail: string): Promise<any> {
+     
     try {
-        const order = await this.orderService.findOne(orderId);
-        if (!order) {
-            throw new NotFoundException(`Order with ID ${orderId} not found`);
-        }
-
-        const amountInCents = order.totalAmount * 100 * 1000;
+        const amountInCents = totalAmount * 100 * 1000;
         const signature = await encrypt({
-            reference: order.id,
+            reference: orderId,
             amount: amountInCents,
             currency: 'COP'
         });
@@ -33,11 +28,11 @@ export class PaymentService {
             amount_in_cents: amountInCents,
             currency: 'COP',
             signature,
-            customer_email: order.customer.email,
+            customer_email: customerEmail,
             payment_method: {
                 installments: 1
             },
-            reference: order.id,
+            reference: orderId,
             payment_source_id: 25841
         };
 
@@ -71,46 +66,46 @@ export class PaymentService {
 }
 
 
-async handlePayment(data: { orderId: string; transactionResult: string }): Promise<void> {
-  // Validar datos de entrada
-  if (!data || !data.orderId || !data.transactionResult) {
-    throw new BadRequestException('Invalid payment data provided');
-  }
+// async handlePayment(data: { orderId: string; transactionResult: string }): Promise<void> {
+//   // Validar datos de entrada
+//   if (!data || !data.orderId || !data.transactionResult) {
+//     throw new BadRequestException('Invalid payment data provided');
+//   }
 
-  // Buscar orden
-  const order = await this.orderService.findOne(data.orderId);
-  if (!order) {
-    throw new NotFoundException(`Order with ID ${data.orderId} not found`);
-  }
+//   // Buscar orden
+//   const order = await this.orderService.findOne(data.orderId);
+//   if (!order) {
+//     throw new NotFoundException(`Order with ID ${data.orderId} not found`);
+//   }
 
-  // Actualizar estado de la orden basado en el resultado de la transacción
-  if (data.transactionResult !== 'success') {
-    await this.orderService.update(data.orderId, { status: OrderStatus.FAILED });
-    return;
-  }
+//   // Actualizar estado de la orden basado en el resultado de la transacción
+//   if (data.transactionResult !== 'success') {
+//     await this.orderService.update(data.orderId, { status: OrderStatus.FAILED });
+//     return;
+//   }
 
-  // Actualizar estado de la orden a "Pagada"
-  await this.orderService.update(data.orderId, { status: OrderStatus.PAID });
+//   // Actualizar estado de la orden a "Pagada"
+//   await this.orderService.update(data.orderId, { status: OrderStatus.PAID });
 
-  // Actualizar stock de los productos
-  const productStockUpdates = order.items.map(async (item) => {
-    const product = await this.productService.findOne(item.product.id);
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${item.product.id} not found`);
-    }
+//   // Actualizar stock de los productos
+//   const productStockUpdates = order.items.map(async (item) => {
+//     const product = await this.productService.findOne(item.product.id);
+//     if (!product) {
+//       throw new NotFoundException(`Product with ID ${item.product.id} not found`);
+//     }
 
-    if (product.stock < item.quantity) {
-      throw new BadRequestException(
-        `Insufficient stock for Product ID ${item.product.id}. Available: ${product.stock}, Requested: ${item.quantity}`,
-      );
-    }
+//     if (product.stock < item.quantity) {
+//       throw new BadRequestException(
+//         `Insufficient stock for Product ID ${item.product.id}. Available: ${product.stock}, Requested: ${item.quantity}`,
+//       );
+//     }
 
-    return this.productService.update(product.id, {
-      stock: product.stock - item.quantity,
-    });
-  });
+//     return this.productService.update(product.id, {
+//       stock: product.stock - item.quantity,
+//     });
+//   });
 
-  // Ejecutar las actualizaciones concurrentemente
-  await Promise.all(productStockUpdates);
-}
+//   // Ejecutar las actualizaciones concurrentemente
+//   await Promise.all(productStockUpdates);
+// }
 }
