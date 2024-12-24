@@ -66,8 +66,6 @@ export class OrderService {
 
     const paymentResult = await this.paymentService.createTransaction(savedOrder.id, savedOrder.totalAmount, customer.email);
 
-    console.log('paymentResult', paymentResult);
-
     return savedOrder;
   }
 

@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import axios from 'axios';
 
-import { encrypt } from '../../utils/utils';
+import { generateSignature } from '../../utils/utils';
 
 
 
@@ -15,9 +15,9 @@ export class PaymentService {
      
     try {
         const amountInCents = totalAmount * 100 * 1000;
-        const signature = await encrypt({
+        const signature = generateSignature ({
+            amount_in_cents: amountInCents,
             reference: orderId,
-            amount: amountInCents,
             currency: 'COP'
         });
 
@@ -32,8 +32,6 @@ export class PaymentService {
             reference: orderId,
             payment_source_id: 25841
         };
-
-        console.log('payload',transactionPayload);
 
         const privateKey = process.env.PRIVATE_KEY;
 

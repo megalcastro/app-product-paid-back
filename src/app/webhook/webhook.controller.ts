@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, HttpException } from '@nestjs/common';
+import { Controller, Post, Body, Param, HttpException, HttpCode } from '@nestjs/common';
 import { WebhookDto } from './webhook.dto';
 import { WebHookService } from './webhook.service';
 
@@ -8,6 +8,7 @@ export class WebHookController {
 
 
   @Post()
+  @HttpCode(200)
   async handleWebhook(@Body() webhookData: WebhookDto) {
     try {
       console.log('Received Webhook:', webhookData);
