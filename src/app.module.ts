@@ -7,6 +7,7 @@ import { CustomerModule } from './app/customer/customer.module';
 import { OrderItemModule } from './app/order-item/order-item.module';
 import { OrderModule } from './app/order/order.module';
 import { PaymentModule } from './app/payment-services/payment.module';
+import { WebHookModule } from './app/webhook/webhook.module';
 
 
 @Module({
@@ -28,7 +29,8 @@ import { PaymentModule } from './app/payment-services/payment.module';
   OrderItemModule,
   OrderModule,
   ProductModule,
-  PaymentModule
+  PaymentModule,
+  WebHookModule,
 ],
   controllers: [],
   providers: [],

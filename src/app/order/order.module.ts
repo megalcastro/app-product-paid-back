@@ -13,6 +13,7 @@ import { PaymentService } from '../payment-services/payment.service';
     TypeOrmModule.forFeature([Order, OrderItem, Product, Customer]),
   ],
   providers: [OrderService, PaymentService],
-  controllers: [OrderController]
+  controllers: [OrderController],
+  exports: [OrderService],
 })
 export class OrderModule {}
