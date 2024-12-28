@@ -63,8 +63,13 @@ export class OrderService {
     order.totalAmount = totalAmount;
 
     const savedOrder = await this.orderRepository.save(order);
+    const { id ,totalAmount : TotalAmount, } = savedOrder;
 
-    const paymentResult = await this.paymentService.createTransaction(savedOrder.id, savedOrder.totalAmount, customer.email);
+    const transactionId = await this.paymentService.createTransaction(
+      {orderId:id, totalAmount:TotalAmount, customerEmail:customer.email, installments:orderData.installments, tokenCard:orderData.tokenCard});
+
+
+      console.log(transactionId);
 
     return savedOrder;
   }
